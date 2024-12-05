@@ -2,6 +2,8 @@
 #include <math.h>
 using namespace Eigen;
 
+#define PI 2*acos(0.0)
+
 Matrix3d EulerAxisAndAngle_ToRotationMatrix(const Vector3d& axis, double angle) {
 	Vector3d normalizedAxis = axis.normalized();
 	AngleAxisd angleAxis = AngleAxisd(angle, normalizedAxis);
@@ -24,7 +26,6 @@ int main()
 		printf("YES\n");
 	}
 
-	
 	srand(static_cast<unsigned int> (time(0)));
 	for (size_t i = 0; i <= 100; i++)
 	{
@@ -34,7 +35,7 @@ int main()
 
 		Vector3d axis = { x,y,z };
 		axis = axis.normalized();
-		RotationMatrixFromEulerAxisAndAngle({ x,y,z }, 6 * PI * i / 100);
+		Matrix3d matrix = EulerAxisAndAngle_ToRotationMatrix({ x,y,z }, 6 * PI * i / 100);
 	}
 
 	
