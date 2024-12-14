@@ -40,7 +40,7 @@ Vector3d EulerAngles_FromRotationMatrix(const Matrix3d& rotationMatrix) {
 	double yaw;
 
 	// Handle the singularity case for θ = π/2 + k·π (pitch)
-	if (abs(rotationMatrix(2, 0)) != 1) {
+	if (abs(rotationMatrix(2, 0)) < 1 - EPSILON) {
 		pitch = -asin(rotationMatrix(2, 0));
 		roll = atan2(rotationMatrix(2, 1) / cos(pitch), rotationMatrix(2, 2) / cos(pitch)); 
 		yaw = atan2(rotationMatrix(1, 0) / cos(pitch), rotationMatrix(0, 0) / cos(pitch));
@@ -86,13 +86,13 @@ pair<Vector3d, double> PrincipalAxisAngle_FromRotationVector(const Vector3d& rot
 	return { rotationVector.normalized(), angle };
 }
 
-void convertRotations(char inputType,
-	const Matrix3d& R_in = Matrix3d::Identity(),
-	const Vector3d& euler_in = Vector3d::Zero(),
-	const Vector3d& axis_in = Vector3d::Zero(),
-	double angle_in = 0.0,
-	const Quaterniond& quat_in = Quaterniond(1, 0, 0, 0),
-	const Vector3d& rotVec_in = Vector3d::Zero()) {
+void Convert(char inputType,
+	Matrix3d& R_in,
+	Vector3d& euler_in ,
+	Vector3d& axis_in,
+	double angle_in,
+	Quaterniond& quat_in,
+	Vector3d& rotVec_in) {
 	// Common outputs
 	Matrix3d R;
 	Vector3d euler;
@@ -148,6 +148,14 @@ void convertRotations(char inputType,
 		cerr << "Invalid input type. Use 'r', 'e', 'p', 'q', or 'v'." << endl;
 		return;
 	}
+
+	R_in = R;
+	euler_in = euler;
+	axis_in = axis;
+	angle_in = angle;
+	quat_in = q;
+	rotVec_in = rotationVector;
+
 }
 
 int main()
@@ -155,8 +163,13 @@ int main()
 
 	printf("EJ 1\n");
 
-	Vector3d axis = { 1,0,0 };
-	Matrix3d resultMatrix = EulerAxisAndAngle_ToRotationMatrix(axis, 30);
+	Vector3d axis = { 0,1,0 };
+	float angle = PI / 4;
+
+	Matrix3d resultMatrix = EulerAxisAndAngle_ToRotationMatrix(axis, angle);
+	cout << "\tAxis: " << axis.transpose() << endl;
+	cout << "\tAngle: " << angle << endl << endl;
+	cout << "\tResult RotationMatrix: " << endl << resultMatrix << endl << endl;
 
 	double determinantValue = resultMatrix.determinant();
 	printf("\tDeterminant: %f\n", determinantValue);
@@ -167,9 +180,8 @@ int main()
 		printf("\tInverse==Transpose: NO\n");
 	}
 
-
-	Vector3d parallel = axis; // Vector parallel to the axis
-	Vector3d perpendicular(0, 1, 0); // Vector perpendicular to the x-axis
+	Vector3d parallel = axis;
+	Vector3d perpendicular(1, 0, 0);
 
 	Vector3d parallel_rotated = resultMatrix * parallel;
 	Vector3d perpendicular_rotated = resultMatrix * perpendicular;
@@ -177,21 +189,28 @@ int main()
 	cout << "\tParallel vector: " << parallel.transpose() << endl;
 	cout << "\tRotated parallel vector: " << parallel_rotated.transpose() << endl;
 	cout << "\tPerpendicular vector: " << perpendicular.transpose() << endl;
-	cout << "\tRotated perpendicular vector: " << perpendicular_rotated.transpose() << endl;
+	cout << "\tRotated perpendicular vector: " << perpendicular_rotated.transpose() << endl << endl;
 
 	printf("EJ 2\n");
+	Vector3d vector = { 3,2,1 };
+	Quaterniond quaternion = { 0.5f,0.5f,0.5f,0.5f };
+	Vector3d resultVector = RotateVectorWithQuaternion(vector, quaternion);
+
+	cout << "\tVector: " << vector.transpose() << endl;
+	cout << "\tQuaternion: " << quaternion << endl << endl;
+
+	cout << "\tRotated Vector: " << resultVector.transpose() << endl << endl;
 
 	printf("EJ 3\n");
 	srand(static_cast<unsigned int> (time(0)));
-
 
 	int num_steps = 100;
 	double start_angle = 0.0;
 	double end_angle = 6.0 * PI;
 	double step = (end_angle - start_angle) / (num_steps - 1);
 
-	vector<double> angles;
-	vector<double> traces;
+	std::vector<double> angles;
+	std::vector<double> traces;
 
 	for (size_t i = 0; i < num_steps; i++)
 	{
@@ -215,13 +234,48 @@ int main()
 			file << angles[i] << "," << traces[i] << "\n";
 		}
 		file.close();
-		cout << "Results written to trace_vs_angle.csv" << endl;
+		cout << "\tResults written to trace_vs_angle.csv" << endl << endl;
 	}
 	else {
-		cerr << "Unable to open file for writing." << endl;
+		cerr << "\tUnable to open file for writing." << endl << endl;
 		return 1;
 	}
 
-	
+	printf("EJ 4\n");
+	double roll = PI / 6;
+	double pitch = PI / 3;
+	double yaw = PI / 4;
+	resultMatrix = RotationMatrix_FromEulerAngles(roll, pitch, yaw);
+	cout << "\tRoll: " << roll <<endl;
+	cout << "\tPitch: " << pitch <<endl;
+	cout << "\tYaw: " << yaw <<endl << endl;
+	cout << "\tResult RotationMatrix: " << endl << resultMatrix << endl << endl;
+	resultVector = EulerAngles_FromRotationMatrix(resultMatrix);
+	cout << "\tResult Vector From RotationMatrix: " << resultVector.transpose() << endl << endl;
+
+	printf("EJ 5 & 6 -->");
+	char inputType;
+	cout << "\tInput Type {Use 'r', 'e', 'p', 'q', or 'v'}: ";
+	cin >> inputType;
+	cout << endl;
+
+
+	Matrix3d R_in = Matrix3d::Identity();
+	Vector3d euler_in = Vector3d::Zero();
+	Vector3d axis_in = Vector3d::Zero();
+	double angle_in = 0.0;
+	Quaterniond quat_in = Quaterniond(0.707, 0, 0.707, 0);
+	Vector3d rotVec_in = Vector3d::Zero();
+
+	Convert(inputType, R_in, euler_in, axis_in, angle_in, quat_in, rotVec_in);
+
+	cout << "\tResult RotationMatrix: " << endl << R_in << endl << endl;
+	cout << "\tResult EulerAngles: " << euler_in.transpose() << endl << endl;
+	cout << "\tResult Axis: " << axis_in.transpose() << endl;
+	cout << "\tResult Angle: " << angle_in << endl << endl;
+	cout << "\tResult Quaternion: " << quat_in<< endl << endl;
+	cout << "\tResult RotationVector: " << rotVec_in.transpose() << endl << endl;
+
+
 	return 0;
 }
