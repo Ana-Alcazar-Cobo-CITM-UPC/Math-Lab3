@@ -40,10 +40,12 @@ Vector3d EulerAngles_FromRotationMatrix(const Matrix3d& rotationMatrix) {
 	double yaw;
 
 	// Handle the singularity case for θ = π/2 + k·π (pitch)
-	if (abs(rotationMatrix(2, 0)) < 1 - EPSILON) {
+	if (std::abs(rotationMatrix(2, 0)) < 1.0 - EPSILON) {
 		pitch = -asin(rotationMatrix(2, 0));
-		roll = atan2(rotationMatrix(2, 1) / cos(pitch), rotationMatrix(2, 2) / cos(pitch)); 
-		yaw = atan2(rotationMatrix(1, 0) / cos(pitch), rotationMatrix(0, 0) / cos(pitch));
+		double cosPitch = cos(pitch);
+
+		yaw = atan2(rotationMatrix(1, 0) / cosPitch, rotationMatrix(0, 0) / cosPitch);
+		roll = atan2(rotationMatrix(2, 1) / cosPitch, rotationMatrix(2, 2) / cosPitch);
 	}
 	else {
 		yaw = 0; 
