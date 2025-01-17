@@ -6,7 +6,10 @@ using namespace Eigen;
 using namespace std;
 
 #define EPSILON 1e-6
-#define PI 2*acos(0.0)
+
+#define DEGTORAD 0.0174532925199432957f
+#define RADTODEG 57.295779513082320876f
+#define PI 3.14159265358979323846
 
 Matrix3d EulerAxisAndAngle_ToRotationMatrix(const Vector3d& axis, double angle) {
 	Vector3d normalizedAxis = axis.normalized();
@@ -162,8 +165,13 @@ void Convert(char inputType,
 
 int main()
 {
+	Quaterniond q;
+	Vector3d axis = { 1,1,0 };
+	q = Quaternion_FromAxisAngle(axis, 30 * DEGTORAD);
+	cout << "\tQuat: " << q << endl << endl;
 
-	printf("EJ 1\n");
+
+	/*printf("EJ 1\n");
 
 	Vector3d axis = { 0,1,0 };
 	float angle = PI / 4;
@@ -276,8 +284,16 @@ int main()
 	cout << "\tResult Axis: " << axis_in.transpose() << endl;
 	cout << "\tResult Angle: " << angle_in << endl << endl;
 	cout << "\tResult Quaternion: " << quat_in<< endl << endl;
-	cout << "\tResult RotationVector: " << rotVec_in.transpose() << endl << endl;
+	cout << "\tResult RotationVector: " << rotVec_in.transpose() << endl << endl;*/
 
 
 	return 0;
 }
+
+
+///// angle&axis -> quaternion 
+///			q = (cos(an/2),sin(an/2)*ax1,sin(an/2)*ax2,sin(an/2)*ax3)
+///
+/// Rodriguez
+///		R(u, φ) = I * cos(φ) + (1 − cos(φ)) * (u * uT) + [u]× * sin(φ)
+/// 
